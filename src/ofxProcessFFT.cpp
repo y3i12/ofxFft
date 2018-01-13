@@ -1,14 +1,18 @@
 #include "ofxProcessFFT.h"
 
-void ProcessFFT::setup(){
+void ProcessFFT::setup(int graphMaxSize){
     
     scaleFactor = 10000;
     numBins = 16384;
     
-    fft.setup(numBins); //default
+    fft.setup(numBins, OF_FFT_WINDOW_HAMMING,
+              OF_FFT_BASIC,
+              numBins,
+              44100); //default
     fft.setUseNormalization(false);
     
-    graphMaxSize = 200; //approx 10sec of history at 60fps
+    //graphMaxSize = 200; //approx 10sec of history at 60fps
+    graphMaxSize = graphMaxSize; //approx 10sec of history at 60fps
     
     graphLow.assign(graphMaxSize, 0.0);
     graphMid.assign(graphMaxSize, 0.0);
@@ -89,12 +93,13 @@ void ProcessFFT::calculateFFT(vector<float>&buffer, float _FFTpercentage, int _n
     
     graphMaxSound.push_back(maxSound); //accumulate loudest sounds
     
-    float accumMaxSounds;
-    for (int i =0; i<graphMaxSound.size(); i++) {
+    float accumMaxSounds = 0;
+    int numberSamples = std::min< int >( graphMaxSound.size(), 25 );
+    for (int i = graphMaxSound.size() - numberSamples; i < graphMaxSound.size(); i++) {
         accumMaxSounds = accumMaxSounds+graphMaxSound[i]; //add up all loudest sounds
     }
     
-    avgMaxSoundOverTime = accumMaxSounds/graphMaxSound.size(); //take average over a certain number of frames
+    avgMaxSoundOverTime = accumMaxSounds/numberSamples; //take average over a certain number of frames
     
     float meanSum=0;
     float mean,stdDev,stdDevAccum, variance,deviation;
